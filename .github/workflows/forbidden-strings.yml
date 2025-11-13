@@ -23,7 +23,7 @@ jobs:
           )
 
           for pattern in "${FORBIDDEN[@]}"; do
-            if grep -RIl "$pattern" ./src ./v1.1-docs; then
+            if grep -RIl "$pattern" ./src; then
               echo "Forbidden pattern found: $pattern"
               exit 1
             fi

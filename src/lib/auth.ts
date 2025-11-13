@@ -1,21 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
-import { User, Vendor, AuthSession } from './types';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { User, Vendor, AuthSession, SupabaseUser } from "./types";
 
 // Re-export the supabase client from supabase.ts
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 
 // Auth state management
 class AuthManager {
   private currentSession: AuthSession | null = null;
 
-  async signUp(email: string, password: string, userData: {
-    first_name?: string;
-    last_name?: string;
-    user_type?: 'customer' | 'vendor';
-  }): Promise<AuthSession> {
+  async signUp(
+    email: string,
+    password: string,
+    userData: {
+      first_name?: string;
+      last_name?: string;
+      user_type?: "customer" | "vendor";
+    }
+  ): Promise<AuthSession> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -23,7 +23,7 @@ class AuthManager {
         data: {
           first_name: userData.first_name,
           last_name: userData.last_name,
-          user_type: userData.user_type || 'customer',
+          user_type: userData.user_type || "customer",
         },
       },
     });
@@ -33,7 +33,7 @@ class AuthManager {
     }
 
     if (!data.user) {
-      throw new Error('User registration failed');
+      throw new Error("User registration failed");
     }
 
     // Create user record in users table
@@ -41,7 +41,7 @@ class AuthManager {
 
     const session = await this.createAuthSession(data.user);
     this.currentSession = session;
-    
+
     return session;
   }
 
@@ -57,7 +57,7 @@ class AuthManager {
 
     const session = await this.createAuthSession(data.user);
     this.currentSession = session;
-    
+
     return session;
   }
 
@@ -71,7 +71,9 @@ class AuthManager {
       return this.currentSession;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return null;
     }
@@ -82,8 +84,11 @@ class AuthManager {
   }
 
   async refreshSession(): Promise<AuthSession | null> {
-    const { data: { session }, error } = await supabase.auth.refreshSession();
-    
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.refreshSession();
+
     if (error || !session?.user) {
       this.currentSession = null;
       return null;
@@ -94,13 +99,19 @@ class AuthManager {
     return authSession;
   }
 
-  private async createUserRecord(user: any, userData: { first_name?: string; last_name?: string; user_type?: string }): Promise<void> {
-    const { error } = await supabase.from('users').insert({
+  private async createUserRecord(
+    user: SupabaseUser,
+    userData: { first_name?: string; last_name?: string; user_type?: string }
+  ): Promise<void> {
+    if (!user.email) {
+      throw new Error("Supabase user missing email");
+    }
+    const { error } = await supabase.from("users").insert({
       id: user.id,
       email: user.email,
       first_name: userData.first_name,
       last_name: userData.last_name,
-      user_type: userData.user_type || 'customer',
+      user_type: userData.user_type || "customer",
     });
 
     if (error) {
@@ -108,12 +119,12 @@ class AuthManager {
     }
   }
 
-  private async createAuthSession(user: any): Promise<AuthSession> {
+  private async createAuthSession(user: SupabaseUser): Promise<AuthSession> {
     // Get user data from database
     const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
       .single();
 
     if (userError) {
@@ -122,15 +133,16 @@ class AuthManager {
 
     const session: AuthSession = {
       user: userData,
-      token: (await supabase.auth.getSession()).data.session?.access_token || '',
+      token:
+        (await supabase.auth.getSession()).data.session?.access_token || "",
     };
 
     // Get vendor data if user is a vendor
-    if (userData.user_type === 'vendor') {
+    if (userData.user_type === "vendor") {
       const { data: vendorData, error: vendorError } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('user_id', user.id)
+        .from("vendors")
+        .select("*")
+        .eq("user_id", user.id)
         .single();
 
       if (!vendorError && vendorData) {
@@ -149,45 +161,52 @@ class AuthManager {
     profile_url?: string;
   }): Promise<Vendor> {
     const session = await this.getCurrentSession();
-    if (!session || session.user.user_type !== 'vendor') {
-      throw new Error('Must be authenticated as vendor');
+    if (!session || session.user.user_type !== "vendor") {
+      throw new Error("Must be authenticated as vendor");
     }
 
-    const { data, error } = await supabase.from('vendors').insert({
-      user_id: session.user.id,
-      tier: 'none',
-      business_name: vendorData.business_name,
-      bio: vendorData.bio,
-      primary_lga_id: vendorData.primary_lga_id,
-      profile_url: vendorData.profile_url,
-      abn_verified: false,
-    }).select().single();
+    const { data, error } = await supabase
+      .from("vendors")
+      .insert({
+        user_id: session.user.id,
+        tier: "none",
+        business_name: vendorData.business_name,
+        bio: vendorData.bio,
+        primary_lga_id: vendorData.primary_lga_id,
+        profile_url: vendorData.profile_url,
+        abn_verified: false,
+      })
+      .select()
+      .single();
 
     if (error) {
       throw new Error(`Failed to create vendor profile: ${error.message}`);
     }
 
     // Update user type to vendor
-    await supabase.from('users').update({
-      user_type: 'vendor'
-    }).eq('id', session.user.id);
+    await supabase
+      .from("users")
+      .update({
+        user_type: "vendor",
+      })
+      .eq("id", session.user.id);
 
     // Refresh session
     this.currentSession = await this.refreshSession();
-    
+
     return data;
   }
 
   async updateVendorProfile(vendorData: Partial<Vendor>): Promise<Vendor> {
     const session = await this.getCurrentSession();
     if (!session?.vendor) {
-      throw new Error('Must have vendor profile');
+      throw new Error("Must have vendor profile");
     }
 
     const { data, error } = await supabase
-      .from('vendors')
+      .from("vendors")
       .update(vendorData)
-      .eq('id', session.vendor.id)
+      .eq("id", session.vendor.id)
       .select()
       .single();
 
@@ -197,17 +216,17 @@ class AuthManager {
 
     // Refresh session
     this.currentSession = await this.refreshSession();
-    
+
     return data;
   }
 
   // Utility methods
   isVendor(): boolean {
-    return this.currentSession?.user.user_type === 'vendor';
+    return this.currentSession?.user.user_type === "vendor";
   }
 
   isAdmin(): boolean {
-    return this.currentSession?.user.user_type === 'admin';
+    return this.currentSession?.user.user_type === "admin";
   }
 
   getCurrentUser(): User | null {
@@ -226,12 +245,12 @@ class AuthManager {
 export const authManager = new AuthManager();
 
 // Supabase auth state listener
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN') {
+supabase.auth.onAuthStateChange(async (event) => {
+  if (event === "SIGNED_IN") {
     // User signed in
     await authManager.refreshSession();
-  } else if (event === 'SIGNED_OUT') {
+  } else if (event === "SIGNED_OUT") {
     // User signed out
-    authManager['currentSession'] = null;
+    authManager["currentSession"] = null;
   }
 });

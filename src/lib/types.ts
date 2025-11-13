@@ -121,7 +121,7 @@ export interface Category {
 // Supabase Auth Types
 export interface SupabaseUser {
   id: string;
-  email: string;
+  email?: string | null;
 }
 
 // Auth Session Types
