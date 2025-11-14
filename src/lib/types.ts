@@ -4,7 +4,7 @@ export interface User {
   email: string;
   first_name?: string;
   last_name?: string;
-  user_type: "customer" | "vendor" | "admin";
+  user_type: "customer" | "business_owner" | "admin";
   created_at: string;
   updated_at: string;
   deleted_at?: string;
