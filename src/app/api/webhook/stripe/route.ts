@@ -1,5 +1,5 @@
+import { stripe } from "@/lib/stripe";
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/src/lib/stripe";
 
 export const config = {
   api: { bodyParser: false },
@@ -16,8 +16,9 @@ export async function POST(req: NextRequest) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    return new NextResponse(`Webhook error: ${err.message}`, { status: 400 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    return new NextResponse(`Webhook error: ${errorMessage}`, { status: 400 });
   }
 
   switch (event.type) {
