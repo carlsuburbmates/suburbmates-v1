@@ -272,7 +272,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create indexes to support RLS policies
-CREATE INDEX idx_vendors_user_id_rls ON vendors(user_id);
 CREATE INDEX idx_products_vendor_published ON products(vendor_id, published);
 CREATE INDEX idx_orders_customer_vendor ON orders(customer_id, vendor_id);
 CREATE INDEX idx_refund_requests_customer_vendor ON refund_requests(customer_id, vendor_id);
