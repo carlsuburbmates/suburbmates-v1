@@ -335,7 +335,6 @@ async function testWebhookSignatureVerification() {
     };
     
     // Sign the payload (this is what Stripe would do)
-    const payload = JSON.stringify(testEvent);
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     
     // In a real scenario, you'd use Stripe's webhook signing
