@@ -14,7 +14,7 @@
  */
 
 require('dotenv').config();
-const { validateStripeConfig, createMarketplaceCheckoutSession, createVendorProCheckoutSession, createFeaturedCheckoutSession, handleStripeWebhook } = require('../src/lib/stripe-config');
+const { validateStripeConfig, createMarketplaceCheckoutSession, createVendorProCheckoutSession, createFeaturedCheckoutSession } = require('../src/lib/stripe-config');
 const Stripe = require('stripe');
 
 // Test configuration
