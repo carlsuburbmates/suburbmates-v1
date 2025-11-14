@@ -27,7 +27,17 @@ ALTER TABLE vendors ADD COLUMN stripe_account_status TEXT DEFAULT 'pending';
 
 -- Add missing fields to products
 ALTER TABLE products ADD COLUMN name TEXT NOT NULL;
-ALTER TABLE products ADD COLUMN slug TEXT UNIQUE NOT NULL;
+-- Step 1: Add slug column as nullable and without UNIQUE constraint
+ALTER TABLE products ADD COLUMN slug TEXT;
+
+-- Step 2: Populate slug for existing products with unique values
+UPDATE products
+SET slug = lower(regexp_replace(name, '[^a-zA-Z0-9]+', '-', 'g')) || '-' || id::text
+WHERE slug IS NULL;
+
+-- Step 3: Set slug column as NOT NULL and add UNIQUE constraint
+ALTER TABLE products ALTER COLUMN slug SET NOT NULL;
+ALTER TABLE products ADD CONSTRAINT products_slug_unique UNIQUE (slug);
 ALTER TABLE products ADD COLUMN lga_id INTEGER REFERENCES lgas(id);
 
 -- Update incorrect fields in vendors
